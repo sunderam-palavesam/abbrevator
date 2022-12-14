@@ -17,10 +17,11 @@ Revisions
 """
 
 # import the required libraries
-import sys, getopt
+import sys
 import itertools
 import re
 import os
+import argparse
 
 """
 function to parse inputs and provide usage
@@ -30,20 +31,13 @@ def getOptions(argv):
   global outputFile
 
   inputFile = ''
-  try:
-    opts, args = getopt.getopt(argv,"h:i:",["ifile="])
-  except getopt.GetoptError:
-    print ("abbrevator.py -i <inputfile>")
-    sys.exit(2)
-  for opt, arg in opts:
-    if opt == '-h':
-      print ("abbrevator.py -i <inputfile> ")
-      sys.exit()
-    elif opt in ("-i", "--ifile"):
-      inputFile = arg
-   
-  print('Input file is ', inputFile)
-    
+  arg_parser = argparse.ArgumentParser( description = "Abbrevate the words in given file" )
+  arg_parser.add_argument( "input_file" )
+  arguments = arg_parser.parse_args()
+
+  inputFile = arguments.input_file
+  print( "Input File is [{}] ".format(inputFile) )
+
 
 """
 function to read input file
@@ -52,29 +46,29 @@ calls computeCombinations for each input string
 def readInputFile():
   # dict of dict nested structure which stores the input string
   # and all abbrevations along with scores
-  global data 
+  global data
   # dict of dict nested structure which stores the final output
   # string with abbrevation having minimum score
-  global dataOut 
-  # list having unique abbrevations 
-  # used as lookup to ensure unique values are only maintained 
-  global uniqueList 
+  global dataOut
+  # list having unique abbrevations
+  # used as lookup to ensure unique values are only maintained
+  global uniqueList
   # list having duplicate abbrevations
   # used as lookup to avoid duplicates
-  global dupeList 
+  global dupeList
 
   data = {}
   dataOut={}
   uniqueList = []
   dupeList = []
-  
+ 
   with open(inputFile) as f:
     for line in f:
       inString=(line.strip().upper())
       # for each input string , get all 3 letter abbrevations
       computeCombinations(inString)
 
-  
+ 
   for i in data:
     for k in dupeList:
       if k in data[i].keys():
@@ -90,7 +84,7 @@ def readInputFile():
 
 """
 function to write output file
-loops through outputdata and writes the 
+loops through outputdata and writes the
 abbrevations with minimum score
 """
 def writeOutputFile():
@@ -109,26 +103,33 @@ def writeOutputFile():
       if tempscore<minscore or c == 1:
         minscore=tempscore
         abbr=k
-    
+   
     if c>0:
       #set the abbrevation with minimum score
       mintemp[abbr]=minscore
-      dataOut[i] = mintemp 
-
+      dataOut[i] = mintemp
+ 
+  print(data)
+  print(dataOut)
+  print(dupeList)
+  
   # write to output file
   with open(outputFile, 'w') as f:
-    for i in dataOut:
+    for i in data:
       f.write(i + '\n')
-      for k in dataOut[i].keys():        
-        f.write(k + '\n')
+      if i in dataOut:
+        for k in dataOut[i].keys():
+          f.write(k + '\n')
+      else:
+        f.write('\n')
 
 """
 function to find all 3 letter abbrevations
- - uses itertools combinations 
- - ensures abbrevations starts with first char of the 
+ - uses itertools combinations
+ - ensures abbrevations starts with first char of the
     string to keep score to minimum
 - logic to handle multiple words split by space
-- ensures that first chars are used for strings 
+- ensures that first chars are used for strings
   with multipe words
 """
 def computeCombinations(str):
@@ -142,7 +143,7 @@ def computeCombinations(str):
   strspacetemp = ''
 
   # if multiple words , split by space and select first chars to get 0 score.
-  # handles cases like Object Oriented Prog 
+  # handles cases like Object Oriented Prog
   for s in str.split():
     strspacetemp = strspacetemp + (''.join(s[0]).upper())
     if len(strspacetemp) >= 3:
@@ -168,7 +169,7 @@ def computeCombinations(str):
         elif strtemp in uniqueList:
           uniqueList.remove(strtemp)
           dupeList.append(strtemp)  
-    
+   
 """
 function to compute the score for given input string
 """
@@ -184,7 +185,7 @@ def computeScore(inString,instringAbbr):
     match c:
       case c if c == lastchar:
         if c != "E":
-          tempscore = 5 
+          tempscore = 5
         elif c == "E":
           tempscore = 20
       case c if c == secondchar:
@@ -228,15 +229,14 @@ def computeScoreByRules(c):
       return 0
 
 """
-Main function 
+Main function
 """
 
 def main(argv):
   getOptions(argv)
   readInputFile()
   writeOutputFile()
-  
+ 
 
 if __name__ == "__main__":
    main(sys.argv[1:])
-
